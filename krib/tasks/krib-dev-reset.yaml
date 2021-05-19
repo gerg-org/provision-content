@@ -56,7 +56,7 @@ Templates:
     declare -a WIPE_PARAMS=('etcd/client-ca-name' 'etcd/client-ca-pw' 'etcd/peer-ca-name' 'etcd/peer-ca-pw' 'etcd/controller-client-cert' 'etcd/controller-client-key')
     {{template "krib-dev-reset.sh.tmpl" .}}
     echo "done CA params reset"
-  Name: etcd CA clear
+  Name: etcd-CA-clear
 - Contents: |-
     #!/bin/bash
     # Reset etcd params
