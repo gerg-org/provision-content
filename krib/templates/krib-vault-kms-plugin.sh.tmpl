@@ -43,7 +43,7 @@ tar -C ${INSTALL_DIR} -xzf ${TMP_DIR}/kubernetes-vault-kms-plugin_0.0.7_Linux_x8
 # We should secure the encryption.yaml file for root-only read
 chmod 600 /etc/kubernetes/pki/encryption.yaml
 
-
+TOKEN={{.Param "vault/kms-plugin-token"}}
 
 # Create the plugin config (requires a param for token)
 cat <<EOF > /etc/vault/vault-kms-plugin.yaml
