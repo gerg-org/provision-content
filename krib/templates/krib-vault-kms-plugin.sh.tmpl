@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # This script installs vault, but doesn't configure it
 
-# set -e
-set -x
+set -e
 
 # Get access and who we are.
 {{template "setup.tmpl" .}}
@@ -43,7 +42,11 @@ tar -C ${INSTALL_DIR} -xzf ${TMP_DIR}/kubernetes-vault-kms-plugin_0.0.7_Linux_x8
 # We should secure the encryption.yaml file for root-only read
 chmod 600 /etc/kubernetes/pki/encryption.yaml
 
-TOKEN={{.Param "vault/kms-plugin-token"}}
+{{if .ParamExists "vault/kms-plugin-token" }}
+TOKEN={{ .Param "vault/kms-plugin-token" }}
+{{else -}}
+TOKEN=setmemanually
+{{end -}}
 
 # Create the plugin config (requires a param for token)
 cat <<EOF > /etc/vault/vault-kms-plugin.yaml
