@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Kubernetes Rebar Integrated Boot (KRIB) Docker Install
 set -e
+set -x # debugging
 
 echo "starting containerd v{{.Param "containerd/version"}} install"
 # Get access and who we are.
