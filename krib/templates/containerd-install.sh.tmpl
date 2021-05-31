@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Kubernetes Rebar Integrated Boot (KRIB) Docker Install
 set -e
+set +x # debugging
 
 echo "starting containerd v{{.Param "containerd/version"}} install"
 # Get access and who we are.
@@ -19,9 +20,11 @@ fi
 # Allow for a local repository for installation files
 {{if .ParamExists "krib/package-repository" -}}
   echo "local repo download containerd v{{.Param "containerd/version"}} binaries in {{.Param "krib/package-repository"}}"
-  curl -L {{.Param "krib/package-repository"}}/cri-containerd-{{.Param "containerd/version"}}.linux-amd64.tar.gz | tar xvz -C /usr/local/
+  curl -L {{.Param "krib/package-repository"}}/cri-containerd-cni-{{.Param "containerd/version"}}-linux-amd64.tar.gz | tar xvz -C /
+  echo running command : curl -L {{.Param "krib/package-repository"}}/cri-containerd-cni-{{.Param "containerd/version"}}-linux-amd64.tar.gz
+
 {{else}}
-  BINARIES="cri-containerd-{{.Param "containerd/version"}}.linux-amd64.tar.gz"
+  BINARIES="cri-containerd-cni-{{.Param "containerd/version"}}-linux-amd64.tar.gz"
   if [[ ! -f $BINARIES ]] ; then
 	  echo "download containerd v{{.Param "containerd/version"}} to $BINARIES"
 	  curl -L https://storage.googleapis.com/cri-containerd-release/$BINARIES -o $BINARIES

@@ -222,7 +222,7 @@ fi
 
 mkdir -p ${TMP_DIR}
 
-echo "Download etcd version: v${ETCD_VERSION}"
+echo "Download etcd version: ${ETCD_VERSION}"
 # Allow for a local repository for installation files
 {{if .ParamExists "krib/package-repository" -}}
 KRIB_REPO={{.Param "krib/package-repository"}}

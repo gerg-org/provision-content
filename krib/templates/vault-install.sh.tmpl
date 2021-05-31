@@ -150,7 +150,6 @@ else
 fi
 
 echo "Install vault version: ${VAULT_VERSION}"
-yum -y install unzip || echo "Unzip already installed"
 unzip -o ${TMP_DIR}/vault_${VAULT_VERSION}_linux_amd64.zip -d ${INSTALL_DIR}
 
 
