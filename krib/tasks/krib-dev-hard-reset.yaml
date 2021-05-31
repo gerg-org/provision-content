@@ -67,56 +67,6 @@ Templates:
   Name: etcd-reset
 - Contents: |-
     #!/bin/bash
-    # Reset consul CA params
-    set -e
-
-    declare -a WIPE_PARAMS=('consul/server-ca-name' 'consul/server-ca-pw' 'consul/server-ca-cert' 'consul/controller-client-cert' 'consul/controller-client-key')
-    {{if .ParamExists "consul/cluster-profile" -}}
-    CLUSTER_PROFILE={{.Param "consul/cluster-profile"}}
-    PROFILE_TOKEN={{.GenerateProfileToken (.Param "consul/cluster-profile") 7200}}
-    {{else -}}
-    echo "Missing consul/cluster-profile on the machine!"
-    exit 1
-    {{end -}}
-    {{template "setup.tmpl" .}}
-    echo "Checking CA"
-    echo "drpcli machines runaction $RS_UUID getca certs/root {{.Param "consul/name"}}-ca"
-    CA_TEST=$(drpcli machines runaction $RS_UUID getca certs/root {{.Param "consul/name"}}-ca) || true
-    if [[ $CA_TEST != "" && $CA_TEST != null ]] ; then
-      echo "CA contains $CA_TEST"
-      echo "HALTING!!! YOU MUST RESET THE CA BY HAND!"  Run:
-      echo "==========================================================================="
-      echo "drpcli plugins runaction certs deleteroot certs/root {{.Param "consul/name"}}-ca"
-      echo "==========================================================================="
-
-      sleep 1
-      drpcli plugins runaction certs deleteroot certs/root {{.Param "consul/name"}}-ca
-    else
-      echo "  No CA root detected - no reset required"
-    fi
-    {{template "krib-dev-reset.sh.tmpl" .}}
-    echo "done consul CA params reset"
-  Name: consul CA clear
-- Contents: |-
-    #!/bin/bash
-    # Reset consul params
-    set -e
-
-    declare -a WIPE_PARAMS=('consul/servers' 'consul/servers-done' 'consul/agents' 'consul/agents-done' 'consul/encryption-key')
-    declare CLUSTER_TYPE="consul"
-    {{template "setup.tmpl" .}}
-    {{if .ParamExists "consul/cluster-profile" -}}
-    CLUSTER_PROFILE={{.Param "consul/cluster-profile"}}
-    PROFILE_TOKEN={{.GenerateProfileToken (.Param "consul/cluster-profile") 7200}}
-    {{else -}}
-    echo "Missing consul/cluster-profile on the machine!"
-    exit 1
-    {{end -}}
-    {{template "krib-dev-reset.sh.tmpl" .}}
-    echo "done consul params reset"
-  Name: consul-reset
-- Contents: |-
-    #!/bin/bash
     # Reset vault CA params
     set -e
 
@@ -194,8 +144,6 @@ Templates:
     systemctl stop etcd || echo "I'm not a master, don't need to stop etcd"
     systemctl stop vault-kms-plugin || echo "vault-kms-plugin not running, no need to stop"
     systemctl stop vault || echo "vault not running, no need to stop"
-    systemctl stop consul-server || echo "consul-server not running, no need to stop"
-    systemctl stop consul-agent || echo "consul-agent not running, no need to stop"
 
     # Whether we're using containerd or dockerd, kill either
     pkill containerd || pkill dockerd
@@ -208,8 +156,6 @@ Templates:
     rm -rf /var/lib/containerd/*
     rm -rf /var/lib/docker/*
     rm -rf /var/lib/rook/*
-    rm -rf /var/lib/consul/client
-    rm -rf /var/lib/consul/server
     rm -rf /var/log/containers/* || echo "/var/log/containers doesn't exist, possibly we weren't using containerd"
     iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 

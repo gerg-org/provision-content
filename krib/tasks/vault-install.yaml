@@ -2,7 +2,7 @@
 Description: "A task to install vault"
 Name: "vault-install"
 Documentation: |
-  Installs (but not configures) consul, to be used as an HA backend to Vault
+  Installs vault
 OptionalParams:
   - vault/server-count
   - vault/version

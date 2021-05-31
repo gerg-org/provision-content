@@ -57,16 +57,9 @@ systemctl restart vault
 # wait for vault to start up
 sleep 5s
 
-# # Wait around until consul has elected a leader
-# until consul operator raft list-peers | grep -q leader;
-# do
-#   SLEEP=$[ ( $RANDOM % 5 ) ];
-# done
 
-# Only initialize vault on the consul leader, to avoid races
 set +e
 export VAULT_CACERT=/etc/vault/pki/server-ca.pem
-# $(consul operator raft list-peers | grep `hostname -s` | grep -q leader)
 
 MASTER_INDEX=$(find_me vault/servers "Uuid" $RS_UUID)
 echo "My vault Master index is $MASTER_INDEX"

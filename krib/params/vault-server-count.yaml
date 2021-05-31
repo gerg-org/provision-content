@@ -3,7 +3,7 @@ Name: "vault/server-count"
 Description: "Number of vault servers to expect"
 Documentation: |
   Allows operators to set the number of machines required for the
-  consul cluster.
+  vault cluster.
   Machines will be automatically added until the number is met.
   NOTE: should be an odd number
 Schema:
