@@ -25,7 +25,10 @@ rules:
   verbs: ["get","watch","list"]
 - apiGroups: [""]
   resources: ["nodes"]
-  verbs: ["list","watch"]
+  verbs: ["list"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["gateways"]
+  verbs: ["get","watch","list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -50,7 +53,7 @@ data:
    aws-secret-access-key: "{{.Param "certmanager/route53-secret-access-key"}}"
 {{- end}}
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-dns
@@ -58,6 +61,9 @@ metadata:
 spec:
   strategy:
     type: Recreate
+  selector:
+    matchLabels:
+      app: external-dns
   template:
     metadata:
       labels:
@@ -66,14 +72,20 @@ spec:
       serviceAccountName: external-dns
       containers:
       - name: external-dns
-        image: registry.opensource.zalan.do/teapot/external-dns:latest
+        image: registry.opensource.zalan.do/teapot/external-dns:{{ .Param "krib/cluster-external-dns-version" }}
         args:
         - --source=service
         - --source=ingress
-        - --policy=upsert-only # would prevent ExternalDNS from deleting any records, omit to enable full synchronization
+        - --source=istio-gateway
+        - --policy=sync # it's safe to use sync because we're also using registry=txt below, so we'll only delete record we created
         - --registry=txt
         - --txt-owner-id={{ .Param "krib/cluster-profile" }}
         - --domain-filter={{ .Param "certmanager/dns-domain" }}
+    {{ if .ParamExists "krib/external-dns-extra-args" -}}
+    {{ range $key, $value  := .Param "krib/external-dns-extra-args" -}}
+    {{ $key }}: {{ $value }}
+    {{ end }}
+    {{ end }}     
         env:
 {{if eq (.Param "krib/external-dns-provider") "aws" }}        
           - name: EXTERNAL_DNS_PROVIDER

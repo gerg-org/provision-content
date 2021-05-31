@@ -67,7 +67,7 @@ KRIB_IP={{ .Machine.Address }}
 {{ end -}}
 
 # we need a random backoff to avoid races.
-SLEEP=$[ ( $RANDOM % 25 ) ]
+SLEEP=$[ ( $RANDOM % 20 ) ]
 sleep $SLEEP
 
 # Making sure I use the right cluster InternalIP
@@ -129,6 +129,10 @@ if [[ $MASTER_INDEX != notme ]] ; then
     # example of appending a featureGate to cluster after initial init
     #kubeadm init --feature-gates=CoreDNS=true | tee -a ~/kubeadm_init.log
 
+# Apply PSPs (if the user hasn't enabled the PSP admission controller, these will have no effect,
+# but if he/she _has_, then the PSPs are required in order to proceed with CNI)
+kubectl create -f /tmp/krib-default-psps.yaml
+
 {{ if .ParamExists "krib/sign-kubelet-server-certs" -}}{{ if eq (.Param "krib/sign-kubelet-server-certs") true -}}
     # We are using serverTLSBootstrap for kublets, so enable auto-approval of kubelet server CSRs
 
@@ -149,32 +153,8 @@ if [[ $MASTER_INDEX != notme ]] ; then
           echo -e "[keyfile]\nunmanaged-devices=interface-name:cali*;interface-name:tunl*" > /etc/NetworkManager/conf.d/calico.conf
         fi
 
+        # It is assumed here that the operator has pre-prepared their calico config
         download -gfsSL {{ .Param "provider/calico-config" }} > /tmp/calico.yaml
-        # This next line assures that in the event of multiple NICs in the node, the NIC able to reach 1.1.1.1 will be chosen
-        # This can optionally be changed to a regex or even an explicit NIC name
-        sed -i "/autodetect\"/a\            - name: IP_AUTODETECTION_METHOD\n              value: \"can-reach=1.1.1.1\"" /tmp/calico.yaml
-        sed -i "s#value: \"192.168.0.0/16\"#value: \"{{ .Param "krib/cluster-pod-subnet" }}\"#g" /tmp/calico.yaml
-
-        ##### Optionally replace default container images with ones from
-        ##### Our trusted registry
-        {{ if .ParamExists "krib/calico-container-image-cni" }}
-        # Replace default container image with the one specified in "krib/calico-container-image-cni"
-        sed -i 's|calico/cni|{{ .Param "krib/calico-container-image-cni" }}|' /tmp/calico.yaml
-        {{ end -}}
-        {{ if .ParamExists "krib/calico-container-image-kube-controllers" }}
-        # Replace default container image with the one specified in "krib/calico-container-image-kube-controllers"
-        sed -i 's|calico/kube-controllers|{{ .Param "krib/calico-container-image-kube-controllers" }}|' /tmp/calico.yaml
-        {{ end -}} 
-        {{ if .ParamExists "krib/calico-container-image-node" }}
-        # Replace default container image with the one specified in "krib/calico-container-image-node"
-        sed -i 's|calico/node|{{ .Param "krib/calico-container-image-node" }}|' /tmp/calico.yaml
-        {{ end -}}  
-        {{ if .ParamExists "krib/calico-container-image-pod2daemon-flexvol" }}
-        # Replace default container image with the one specified in "krib/calico-container-pod2daemon-flexvol"
-        sed -i 's|calico/pod2daemon-flexvol|{{ .Param "krib/calico-container-image-pod2daemon-flexvol" }}|' /tmp/calico.yaml
-        {{ end -}}         
-        ##### End optional image adjustments               
-
         kubectl apply -f /tmp/calico.yaml
         mkdir -p /tmp/cleanup
         mv /tmp/calico.yaml /tmp/cleanup/
@@ -184,6 +164,44 @@ if [[ $MASTER_INDEX != notme ]] ; then
         echo "Starting flannel networking..."
         download -gfsSL {{ .Param "provider/flannel-config" }} | kubectl apply -f -
         ;;
+      cilium)
+        echo "Starting cilium networking..."
+        # download -gfsSL {{ .Param "provider/flannel-config" }} | kubectl apply -f -
+        curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+        helm repo add cilium https://funkypenguin.github.io/helm-cilium/
+        helm repo update
+        #kubectl create -f https://raw.githubusercontent.com/cilium/cilium/1.9.4/install/kubernetes/quick-install.yaml
+        helm install cilium cilium/cilium --version 1.9.5 \
+          --namespace kube-system \
+          --set hubble.listenAddress=":4244" \
+          --set hubble.relay.enabled=true \
+          --set hubble.ui.enabled=true \
+          --set kubeProxyReplacement=disabled \
+          --set image.repository=gergorg/cilium \
+          --set extraArgsList="{api-rate-limit=endpoint-create:rate-limit:2000/s\,rate-burst:5000\,parallel-requests:5000\,auto-adjust:false\,max-wait-duration:3000s,api-rate-limit=endpoint-delete=parallel-requests:5000\,auto-adjust:false}" \
+          --set updateStrategy.rollingUpdate.maxUnavailable=1 \
+          --set resourceQuotas.enabled=true \
+          --set prometheus.enabled=true \
+          --set prometheus.port=19090 \
+          --set rollOutCiliumPods=true \
+          --set operator.rollOutPods=true \
+          --set operator.prometheus.enabled=true \
+          --set podDisruptionBudget.maxUnavailable=1 \
+          --set resources.requests.cpu=1 \
+          --set resources.requests.memory=128Mi \
+          --set containerRuntime.integration=containerd \
+          --set containerRuntime.socketPath=/run/containerd/containerd.sock \
+          --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}" \
+          --set etcd.enabled=true \
+          --set etcd.managed=true \
+          --set k8s.requireIPv4PodCIDR=true \
+          --set ipam.mode=kubernetes
+          # we need kubeproxyreplacement disabeld for istio support
+
+          # --set hostServices.enabled=false \
+          # --set k8sServiceHost={{ .Param "krib/cluster-master-vip" }} \
+          # --set k8sServicePort={{ .Param "krib/cluster-api-port" }}         
+        ;;        
       weave)
         echo "Starting weave networking..."
         kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
@@ -198,7 +216,7 @@ if [[ $MASTER_INDEX != notme ]] ; then
     get_param $KRIB_MASTER_CERTS_PARAM | jq -r . | base64 -d - | tar -zxvf -
     cd -
 
-    kubeadm init --config=/tmp/kubeadm.cfg --ignore-preflight-errors {{ .Param "krib/ignore-preflight-errors" }} 2>&1 > /tmp/kubeadm.init.log
+    kubeadm init --config=/tmp/kubeadm.cfg --ignore-preflight-errors {{ .Param "krib/ignore-preflight-errors" }}  --v=5 2>&1 > /tmp/kubeadm.init.log
 
   fi
 

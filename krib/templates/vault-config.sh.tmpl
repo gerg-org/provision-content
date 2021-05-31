@@ -25,7 +25,6 @@ xiterr 1 "Missing vault/cluster-profile on the machine!"
 
 {{template "krib-lib.sh.tmpl" .}}
 
-# Ensure that the vault systemd service specifies all vault nodes using retry-join
 setup_seal() {
   echo "Setting up seal..."
 
@@ -55,31 +54,45 @@ setup_seal
 systemctl daemon-reload
 systemctl restart vault
 
-# Wait around until consul has elected a leader
-until consul operator raft list-peers | grep -q leader;
-do
-  SLEEP=$[ ( $RANDOM % 5 ) ];
-done
+# wait for vault to start up
+sleep 5s
+
+# # Wait around until consul has elected a leader
+# until consul operator raft list-peers | grep -q leader;
+# do
+#   SLEEP=$[ ( $RANDOM % 5 ) ];
+# done
 
 # Only initialize vault on the consul leader, to avoid races
 set +e
-$(consul operator raft list-peers | grep `hostname -s` | grep -q leader)
-if [[ $? -eq 0 ]] ; then
-  set -e
-  # Before attempting to init vault, sleep 5s to give it time to wake up
-  sleep 5s
+export VAULT_CACERT=/etc/vault/pki/server-ca.pem
+# $(consul operator raft list-peers | grep `hostname -s` | grep -q leader)
 
-  export VAULT_CACERT=/etc/vault/pki/server-ca.pem
-  vault operator init -recovery-shares=1 -recovery-threshold=1 -key-shares=1 -key-threshold=1 -format json > /tmp/vault.json
+MASTER_INDEX=$(find_me vault/servers "Uuid" $RS_UUID)
+echo "My vault Master index is $MASTER_INDEX"
 
-  # Get our recovery key and token, then delete the local record
-  export VAULT_UNSEAL_KEY=`cat /tmp/vault.json | jq -r '[.recovery_keys_b64][0][0]'`
-  export VAULT_TOKEN=`cat /tmp/vault.json | jq -r '[.root_token][0]'`
+if [[ $MASTER_INDEX == 0 ]] ; then
 
-  # Insert recovery key and token into params
-  drpcli -T "$PROFILE_TOKEN" profiles add "$CLUSTER_PROFILE" param "vault/unseal-key" to "$VAULT_UNSEAL_KEY"
-  drpcli -T "$PROFILE_TOKEN" profiles add "$CLUSTER_PROFILE" param "vault/root-token" to "$VAULT_TOKEN"
+  echo "Initializing vault..."
+  sleep 20s
 
+  vault status > /dev/null
+  
+  # is vault unsealed?
+  if [[ $? -eq 2 ]]
+  then
+    vault operator init -recovery-shares=1 -recovery-threshold=1 -key-shares=1 -key-threshold=1 -format json > /tmp/vault.json
+
+    # Get our recovery key and token, then delete the local record
+    export VAULT_UNSEAL_KEY=`cat /tmp/vault.json | jq -r '[.recovery_keys_b64][0][0]'`
+    export VAULT_TOKEN=`cat /tmp/vault.json | jq -r '[.root_token][0]'`
+
+    # Insert recovery key and token into params
+    drpcli -T "$PROFILE_TOKEN" profiles add "$CLUSTER_PROFILE" param "vault/unseal-key" to "$VAULT_UNSEAL_KEY"
+    drpcli -T "$PROFILE_TOKEN" profiles add "$CLUSTER_PROFILE" param "vault/root-token" to "$VAULT_TOKEN"
+
+    sleep 10s # does it take a while for auto-unlock to sort itself out?
+  fi
   # enable the transit secret backend
   vault secrets enable transit
 

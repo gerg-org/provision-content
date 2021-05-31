@@ -43,6 +43,14 @@ fi
 {{end -}}
 # Configure containerd
 
+# Also retrieve the source, which is where the containerd.service file is now found
+echo "local repo download containerd v{{.Param "containerd/version"}} source in {{.Param "krib/package-repository"}}"
+curl -L {{.Param "krib/package-repository"}}/containerd-v{{.Param "containerd/version"}}.tar.gz -o containerd-v{{.Param "containerd/version"}}.tar.gz
+tar xfp containerd-v{{.Param "containerd/version"}}.tar.gz
+cp containerd-{{.Param "containerd/version"}}/containerd.service /etc/systemd/system/
+systemctl daemon-reload
+rm -rf containerd-{{.Param "containerd/version"}}
+
 {{if .ParamExists "containerd/config" -}}
 echo "Creating /etc/containerd/config.toml file from Param containerd/config"
 cat <<EOF >/etc/containerd/config.toml
@@ -56,7 +64,6 @@ echo "Skipping custom etc/containerd/config.toml: No containerd/config defined"
 {{if .ParamExists "containerd/loglevel" -}}
 ## Override the default (noisy) "info" log level
 echo "Creating /etc/systemd/system/containerd.service.d/override.conf file from Param containerd/loglevel"
-
 mkdir -p /etc/systemd/system/containerd.service.d
 cat << EOF > /etc/systemd/system/containerd.service.d/override.conf
 [Service]
