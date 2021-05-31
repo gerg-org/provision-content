@@ -117,12 +117,12 @@ echo "${VAULT_SERVER_COUNT} servers ready!"
 
 
 # Add the vault user if it doesn't exist
-id -u vault &>/dev/null || ( echo "Creating vault user"; useradd vault -d /var/lib/vault )
+id -u vault &>/dev/null || ( echo "Creating vault user"; useradd vault -d /var/lib/vault --create-home )
 
 SERVER_CA_PW=$(wait_for_variable "vault/server-ca-pw")
 
 # Add the vault user if it doesn't exist
-id -u vault &>/dev/null || ( echo "Creating vault user"; useradd vault -d /var/lib/vault )
+id -u vault &>/dev/null || ( echo "Creating vault user"; useradd vault -d /var/lib/vault --create-home )
 
 mkdir -p /etc/vault/pki/
 
