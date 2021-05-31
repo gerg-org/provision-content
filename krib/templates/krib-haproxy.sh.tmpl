@@ -15,7 +15,7 @@ xiterr 1 "Missing etcd/cluster-profile on the machine!"
 
 {{template "krib-lib.sh.tmpl" .}}
 
-install haproxy
+apt-get -o Dpkg::Options::="--force-confold" -y install haproxy
 
 systemctl enable haproxy
 systemctl start haproxy
