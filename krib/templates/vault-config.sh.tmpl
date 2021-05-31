@@ -58,7 +58,7 @@ systemctl restart vault
 sleep 5s
 
 
-set +e
+set -e
 export VAULT_CACERT=/etc/vault/pki/server-ca.pem
 
 MASTER_INDEX=$(find_me vault/servers "Uuid" $RS_UUID)

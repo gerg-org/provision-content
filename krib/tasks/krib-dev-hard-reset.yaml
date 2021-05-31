@@ -155,7 +155,7 @@ Templates:
     rm -rf /docker/etcd/*
     rm -rf /var/lib/containerd/*
     rm -rf /var/lib/docker/*
-    rm -rf /var/lib/rook/*
+    rm -rf /var/lib/vault/*
     rm -rf /var/log/containers/* || echo "/var/log/containers doesn't exist, possibly we weren't using containerd"
     iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 

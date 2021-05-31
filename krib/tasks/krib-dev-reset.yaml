@@ -191,8 +191,6 @@ Templates:
     systemctl stop etcd || echo "I'm not a master, don't need to stop etcd"
     systemctl stop vault-kms-plugin || echo "vault-kms-plugin not running, no need to stop"
     systemctl stop vault || echo "vault not running, no need to stop"
-    systemctl stop consul-server || echo "consul-server not running, no need to stop"
-    systemctl stop consul-agent || echo "consul-agent not running, no need to stop"
 
     # Whether we're using containerd or dockerd, kill either
     pkill containerd || pkill dockerd
@@ -205,8 +203,7 @@ Templates:
     rm -rf /var/lib/containerd/*
     rm -rf /var/lib/docker/*
     rm -rf /var/lib/rook/*
-    rm -rf /var/lib/consul/client
-    rm -rf /var/lib/consul/server
+    rm -rf /var/lib/vault/*
     rm -rf /var/log/containers/* || echo "/var/log/containers doesn't exist, possibly we weren't using containerd"
     iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 
