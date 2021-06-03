@@ -99,7 +99,7 @@ fi
 chmod +x {kubeadm,kubelet,kubectl}
 
 echo "Download latest kubelet systemd service unit file"
-download -L "https://github.com/kubernetes/release/blob/master/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" -o /etc/systemd/system/kubelet.service
+download -L "https://raw.githubusercontent.com/kubernetes/release/master/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" -o /etc/systemd/system/kubelet.service
 
 sed -i "s:/usr/bin:$INSTALL_DIR:g" /etc/systemd/system/kubelet.service
 
