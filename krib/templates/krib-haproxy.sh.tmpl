@@ -15,7 +15,14 @@ xiterr 1 "Missing etcd/cluster-profile on the machine!"
 
 {{template "krib-lib.sh.tmpl" .}}
 
-apt-get -o Dpkg::Options::="--force-confold" -y install haproxy
+# This task can work with both Ubuntu and CentOS hosts
+if [ -f /etc/redhat-release ]; then
+  yum -y install haproxy
+fi
+
+if [ -f /etc/lsb-release ]; then
+  apt-get -o Dpkg::Options::="--force-confold" -y install haproxy
+fi
 
 systemctl enable haproxy
 systemctl start haproxy
