@@ -71,14 +71,15 @@ mkdir -p /opt/cni/bin
 KRIB_REPO={{.Param "krib/package-repository"}}
 {{end -}}
 
-echo "Download cni plugin version: ${CNI_VERSION}"
-if [[ ! -z "$KRIB_REPO" ]] ; then
-  download -L "${KRIB_REPO}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o ${TMP_DIR}/cni-plugins-amd64-${CNI_VERSION}.tgz
-else
-  download -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o ${TMP_DIR}/cni-plugins-amd64-${CNI_VERSION}.tgz
-fi
-echo "Install cni plugin version: ${CNI_VERSION}"
-tar -C /opt/cni/bin -xzf ${TMP_DIR}/cni-plugins-amd64-${CNI_VERSION}.tgz
+# Don't need these, since containerd bundles them anyway
+# echo "Download cni plugin version: ${CNI_VERSION}"
+# if [[ ! -z "$KRIB_REPO" ]] ; then
+#   download -L "${KRIB_REPO}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o ${TMP_DIR}/cni-plugins-amd64-${CNI_VERSION}.tgz
+# else
+#   download -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o ${TMP_DIR}/cni-plugins-amd64-${CNI_VERSION}.tgz
+# fi
+# echo "Install cni plugin version: ${CNI_VERSION}"
+# tar -C /opt/cni/bin -xzf ${TMP_DIR}/cni-plugins-amd64-${CNI_VERSION}.tgz
 
 echo "Download crictl version: ${CRICTL_VERSION}"
 if [[ ! -z "$KRIB_REPO" ]] ; then
