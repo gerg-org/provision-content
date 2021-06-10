@@ -54,7 +54,8 @@ Templates:
     else
       echo "  No CA root detected - no reset required"
     fi
-    declare -a WIPE_PARAMS=('etcd/server-ca-name' 'etcd/server-ca-pw' 'etcd/peer-ca-name' 'etcd/peer-ca-pw' 'etcd/controller-client-cert' 'etcd/controller-client-key')
+    declare -a WIPE_PARAMS=('etcd/server-ca-name' 'etcd/server-ca-pw' 'etcd/peer-ca-name' 'etcd/peer-ca-pw' 'etcd/controller-client-cert' 'etcd/controller-client-key' 'etcd/server-ca-cert')
+
     {{template "krib-dev-reset.sh.tmpl" .}}
     echo "done CA params reset"
   Name: etcd-CA-clear.sh
