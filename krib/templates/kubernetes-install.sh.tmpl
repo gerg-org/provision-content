@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Kubernetes and Kubeadm Install Content
 set -e
+set -x
 
 # Get access and who we are.
 {{template "setup.tmpl" .}}
@@ -100,7 +101,9 @@ fi
 chmod +x {kubeadm,kubelet,kubectl}
 
 echo "Download latest kubelet systemd service unit file"
+echo download -L "https://raw.githubusercontent.com/kubernetes/release/master/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" -o /etc/systemd/system/kubelet.service
 download -L "https://raw.githubusercontent.com/kubernetes/release/master/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" -o /etc/systemd/system/kubelet.service
+
 
 sed -i "s:/usr/bin:$INSTALL_DIR:g" /etc/systemd/system/kubelet.service
 
