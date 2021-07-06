@@ -67,14 +67,10 @@ etcd:
     certFile: /etc/kubernetes/pki/etcd/server.pem
     keyFile: /etc/kubernetes/pki/etcd/server-key.pem
     endpoints:
-{{if and $ha (.ParamExists "krib/cluster-master-vip") (.ParamExists "etcd/cluster-client-vip-port") }}
-      - https://{{ .Param "krib/cluster-master-vip" }}:{{ .Param "etcd/cluster-client-vip-port" }}
-{{else}}
   {{ $port := .Param "etcd/client-port" -}}
   {{- range $elem := .Param "etcd/servers"}}
       - https://{{ $elem.Address }}:{{ $port }}
   {{ end -}}
-{{ end -}}
 kubernetesVersion: {{ .Param "krib/cluster-kubernetes-version" }}
 networking:
   dnsDomain: "{{ .Param "krib/cluster-service-dns-domain" }}"
