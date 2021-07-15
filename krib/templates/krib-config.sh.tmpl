@@ -170,7 +170,7 @@ kubectl create -f /tmp/krib-default-psps.yaml
         curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
         helm repo add cilium https://helm.cilium.io/
         helm repo update
-        helm install cilium cilium/cilium --version 1.10.2 \
+        helm install cilium cilium/cilium --version 1.10.3 \
           --namespace kube-system \
           --set hubble.listenAddress=":4244" \
           --set hubble.relay.enabled=true \
@@ -191,12 +191,12 @@ kubectl create -f /tmp/krib-default-psps.yaml
           --set containerRuntime.integration=containerd \
           --set containerRuntime.socketPath=/run/containerd/containerd.sock \
           --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}" \
-          --set etcd.enabled=true \
-          --set etcd.managed=true \
           --set k8s.requireIPv4PodCIDR=true \
           --set ipam.mode=kubernetes
           # we need kubeproxyreplacement disabeld for istio support
 
+          #           --set etcd.enabled=true \
+          # --set etcd.managed=true \
           # --set hostServices.enabled=false \
           # --set k8sServiceHost={{ .Param "krib/cluster-master-vip" }} \
           # --set k8sServicePort={{ .Param "krib/cluster-api-port" }}         
